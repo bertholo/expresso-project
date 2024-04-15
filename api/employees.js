@@ -1,7 +1,11 @@
 const express = require('express');
 const employeesRouter = express.Router();
+const timesheetsRouter = require('./timesheets');
+
 const sqlite3 = require('sqlite3');
 const db = new sqlite3.Database(process.env.DATABASE_TEST || './database.sqlite');
+
+employeesRouter.use('/:employeeId/timesheets', timesheetsRouter);
 
 employeesRouter.param('employeeId', (req, res, next, employeeId) => {
     db.get('SELECT * FROM Employee WHERE Employee.id=$employeeId', {$employeeId: employeeId}, (err, employee) => {
