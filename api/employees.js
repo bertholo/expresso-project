@@ -5,8 +5,6 @@ const timesheetsRouter = require('./timesheets');
 const sqlite3 = require('sqlite3');
 const db = new sqlite3.Database(process.env.DATABASE_TEST || './database.sqlite');
 
-employeesRouter.use('/:employeeId/timesheets', timesheetsRouter);
-
 employeesRouter.param('employeeId', (req, res, next, employeeId) => {
     db.get('SELECT * FROM Employee WHERE Employee.id=$employeeId', {$employeeId: employeeId}, (err, employee) => {
         if(err){
@@ -19,6 +17,8 @@ employeesRouter.param('employeeId', (req, res, next, employeeId) => {
         }
     });
 });
+
+employeesRouter.use('/:employeeId/timesheets', timesheetsRouter);
 
 employeesRouter.get('/', (req, res, next) => {
     db.all('SELECT * FROM Employee WHERE is_current_employee = 1', (err, employees) => {
@@ -92,23 +92,19 @@ employeesRouter.put('/:employeeId', (req, res, next) => {
 });
 
 employeesRouter.delete('/:employeeId', (req, res, next) => {
-    const sql = 'UPDATE Employee SET is_current_employee = 0 WHERE id = $employeeId';
+    const sql = 'UPDATE Employee SET is_current_employee = 0 WHERE Employee.id = $employeeId';
     const values = {$employeeId: req.params.employeeId};
-    db.run(sql, values, (err) => {
-        if(err) {
-            next(err);
-        } else{
-            db.get(`SELECT * FROM Employee WHERE id = ${req.params.employeeId}`, (err, employee) => {
-                if(err){
-                    next(err);
-                } else if(employee !== null){
-                    res.sendStatus(204);
-                } else{
-                    res.sendStatus(404);
-                }
-            });
-        }
+  
+    db.run(sql, values, (error) => {
+      if (error) {
+        next(error);
+      } else {
+        db.get(`SELECT * FROM Employee WHERE Employee.id = ${req.params.employeeId}`,
+          (error, employee) => {
+            res.status(200).json({employee: employee});
+          });
+      }
     });
-});
+  });
 
 module.exports = employeesRouter;
